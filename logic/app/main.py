@@ -1,9 +1,10 @@
 import sys
 import os
+from decimal import Decimal
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -26,10 +27,32 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def to_jsonable(obj):
+    if obj is None:
+        return None
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, set):
+        return list(obj)
+    if isinstance(obj, list):
+        return [to_jsonable(item) for item in obj]
+    if isinstance(obj, tuple):
+        return [to_jsonable(item) for item in obj]
+    if isinstance(obj, dict):
+        return {k: to_jsonable(v) for k, v in obj.items()}
+    if hasattr(obj, "__dict__"):
+        return {k: to_jsonable(v) for k, v in obj.__dict__.items() if not k.startswith("_")}
+    return obj
 
 
 class UploadBody(BaseModel):
@@ -49,24 +72,34 @@ def upload(body: UploadBody):
 def get_student(student_id: str):
     student = fetch_student(student_id)
     if student is None:
-        raise HTTPException(status_code=404, detail="Student not found")
-    return student
+        raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
+    return to_jsonable(student)
 
 
 @app.get("/courses/{student_id}")
-def get_courses(student_id: str):
-    records = fetch_course_records(student_id, latest_only=False)
-    return records
+def get_courses(
+    student_id: str,
+    latest_only: bool = Query(False, description="是否只查最新學期")
+):
+    if fetch_student(student_id) is None:
+        raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
+    records = fetch_course_records(student_id, latest_only=latest_only)
+    return to_jsonable(records)
 
 
 @app.get("/gpa/{student_id}")
 def get_gpa(student_id: str):
+    if fetch_student(student_id) is None:
+        raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
     records = fetch_course_records(student_id, latest_only=False)
-    return compute_gpa(records)
+    return to_jsonable(compute_gpa(records))
 
 
 @app.get("/audit/{student_id}")
 def get_audit(student_id: str):
+    if fetch_student(student_id) is None:
+        raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
+
     req_ok, req_missing, req_passed, req_credits = Required(student_id)
     grp = Group(student_id)
     gen = General(student_id)
@@ -94,7 +127,7 @@ def get_audit(student_id: str):
         and req_ok and grp_ok and gen["is_passed"] and phy["is_passed"] and elec_ok
     )
 
-    return {
+    return to_jsonable({
         "summary": {
             "total_earned": total_earned,
             "total_required": TOTAL_REQUIRED,
@@ -127,4 +160,4 @@ def get_audit(student_id: str):
             "required_credits": ELEC_REQUIRED,
             "courses": elec_courses,
         },
-    }
+    })

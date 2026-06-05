@@ -9,10 +9,10 @@ import startupAudioSrc from "../mix_02s (audio-joiner.com).mp3";
 import completedAudioSrc from "../videoplayback (2) (online-video-cutter.com).mp3";
 
 const NAV_ITEMS = [
-  { id: "dashboard", icon: "◈", label: "總覽" },
-  { id: "courses",   icon: "◉", label: "修課紀錄" },
-  { id: "audit",     icon: "◎", label: "畢業審核" },
-  { id: "gpa",       icon: "◈", label: "GPA 分析" },
+  { id: "dashboard", label: "總覽" },
+  { id: "courses",   label: "修課紀錄" },
+  { id: "audit",     label: "畢業審核" },
+  { id: "gpa",       label: "GPA 分析" },
 ];
 
 export default function App() {

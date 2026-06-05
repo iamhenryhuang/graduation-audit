@@ -13,6 +13,18 @@ def fetch_student(student_id: str):
         return {col.name: getattr(student, col.name) for col in Student.__table__.columns}
 
 
+def _resolve_category(is_general: bool, is_defense: bool, is_required: bool, is_group: bool) -> str:
+    if is_required:
+        return "必修"
+    if is_group:
+        return "群修"
+    if is_general:
+        return "通識"
+    if is_defense:
+        return "國防"
+    return "選修"
+
+
 def fetch_course_records(student_id: str, latest_only: bool = True) -> list[dict]:
     """Fetch course records for a student.
 
@@ -26,6 +38,8 @@ def fetch_course_records(student_id: str, latest_only: bool = True) -> list[dict
             CourseRecord.course_status,
             CourseRecord.academic_year,
             CourseRecord.academic_semester,
+            CourseRecord.is_general,
+            CourseRecord.is_defense,
             AllCourse.course_name,
             AllCourse.credit,
         )
@@ -43,6 +57,13 @@ def fetch_course_records(student_id: str, latest_only: bool = True) -> list[dict
     with get_session() as session:
         rows = session.execute(stmt).all()
 
+        required_codes = {
+            code for (code,) in session.execute(select(RequiredCourse.course_code)).all()
+        }
+        group_codes = {
+            code for (code,) in session.execute(select(CsGroup.course_code)).all()
+        }
+
     return [
         {
             "course_code": row.course_code,
@@ -53,6 +74,12 @@ def fetch_course_records(student_id: str, latest_only: bool = True) -> list[dict
             "academic_year_semester": f"{row.academic_year}{row.academic_semester}",
             "course_name": row.course_name,
             "credit": float(row.credit),
+            "category": _resolve_category(
+                is_general=row.is_general,
+                is_defense=row.is_defense,
+                is_required=row.course_code in required_codes,
+                is_group=row.course_code in group_codes,
+            ),
         }
         for row in rows
     ]

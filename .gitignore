@@ -1,18 +1,20 @@
-# 個人成績資料，不上傳
-/data
-database/exportStudentData.json
-
-# 環境設定
-.env
-
 # Python
 .venv/
 __pycache__/
 *.pyc
 
-# Frontend build cache
-frontend/.vite/
-frontend/dist/
+# Node
+node_modules/
+dist/
+
+# Environment
+.env
+
+# VSCode
+.vscode/
 
 # Docker
-logic/__pycache__/
+postgres_data/
+
+# OS
+.DS_Store

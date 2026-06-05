@@ -59,38 +59,22 @@ export default function Upload() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "linear-gradient(135deg, #eef2ff 0%, #f1f5f9 50%, #f0fdf4 100%)",
+      background: "#f5f5f4",
       padding: "24px",
     }}>
-      <div style={{ width: "100%", maxWidth: "560px" }}>
+      <div style={{ width: "100%", maxWidth: "480px" }}>
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <div style={{
-            width: "64px",
-            height: "64px",
-            borderRadius: "20px",
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "30px",
-            margin: "0 auto 16px",
-            boxShadow: "0 8px 24px rgba(99,102,241,0.3)",
-          }}>🎓</div>
-          <h1 style={{ fontSize: "26px", color: "#1e293b", marginBottom: "6px" }}>
-            Graduation Audit
+        <div style={{ marginBottom: "32px" }}>
+          <h1 style={{ fontSize: "22px", fontWeight: "600", color: "#1c1917", marginBottom: "6px" }}>
+            畢業學分檢核
           </h1>
-          <p style={{ color: "#64748b", fontSize: "15px" }}>
-            畢業學分檢核系統
+          <p style={{ color: "#78716c", fontSize: "14px" }}>
+            上傳全人系統匯出的 JSON 檔案以開始分析
           </p>
         </div>
 
         {/* Upload card */}
-        <div className="card" style={{ padding: "32px" }}>
-          <p style={{ color: "#475569", fontSize: "14px", marginBottom: "20px", textAlign: "center" }}>
-            請上傳全人系統匯出的 JSON 檔案以開始分析
-          </p>
-
+        <div className="card" style={{ padding: "28px" }}>
           {/* Drop zone */}
           <div
             onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); }}
@@ -98,33 +82,27 @@ export default function Upload() {
             onDragEnter={() => setDragging(true)}
             onDragLeave={() => setDragging(false)}
             style={{
-              border: dragging ? "2px solid #6366f1" : "2px dashed #cbd5e1",
-              borderRadius: "12px",
-              padding: "48px 24px",
+              border: `1px dashed ${dragging ? "#a8a29e" : "#d6d3d1"}`,
+              borderRadius: "6px",
+              padding: "40px 24px",
               textAlign: "center",
-              background: dragging ? "#eef2ff" : "#f8fafc",
-              transition: "all 0.2s ease",
-              cursor: "pointer",
+              background: dragging ? "#fafaf9" : "white",
+              transition: "all 0.15s",
             }}
           >
-            <div style={{ fontSize: "48px", marginBottom: "12px" }}>
-              {dragging ? "📂" : "📄"}
-            </div>
-            <p style={{ fontWeight: "600", color: "#374151", marginBottom: "4px" }}>
+            <p style={{ fontWeight: "500", color: "#44403c", marginBottom: "4px" }}>
               拖曳 JSON 到這裡
             </p>
-            <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "20px" }}>或</p>
+            <p style={{ color: "#a8a29e", fontSize: "13px", marginBottom: "16px" }}>或</p>
             <label style={{
               display: "inline-block",
-              padding: "10px 24px",
-              borderRadius: "8px",
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              padding: "8px 20px",
+              borderRadius: "6px",
+              background: "#292524",
               color: "white",
-              fontWeight: "600",
-              fontSize: "14px",
+              fontSize: "13px",
+              fontWeight: "500",
               cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(99,102,241,0.3)",
-              transition: "opacity 0.15s",
             }}>
               選擇檔案
               <input
@@ -139,19 +117,15 @@ export default function Upload() {
           {/* File selected */}
           {fileName && !error && (
             <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              marginTop: "16px",
-              padding: "12px 16px",
-              borderRadius: "10px",
-              background: "#f8fafc",
-              border: "1px solid #e2e8f0",
+              marginTop: "14px",
+              padding: "10px 14px",
+              borderRadius: "6px",
+              background: "#fafaf9",
+              border: "1px solid #e7e5e4",
+              fontSize: "13px",
+              color: "#57534e",
             }}>
-              <span style={{ fontSize: "20px" }}>📄</span>
-              <span style={{ fontSize: "13px", color: "#475569", fontWeight: "500" }}>
-                {fileName}
-              </span>
+              {fileName}
             </div>
           )}
 
@@ -160,55 +134,46 @@ export default function Upload() {
             <div style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              marginTop: "16px",
-              padding: "14px",
-              borderRadius: "10px",
-              background: "#eef2ff",
+              gap: "8px",
+              marginTop: "14px",
+              padding: "10px 14px",
+              borderRadius: "6px",
+              background: "#fafaf9",
+              fontSize: "13px",
+              color: "#78716c",
             }}>
               <div className="spinner" />
-              <span style={{ color: "#6366f1", fontSize: "14px", fontWeight: "500" }}>
-                正在上傳並解析資料...
-              </span>
+              正在上傳並解析資料...
             </div>
           )}
 
           {/* Error */}
           {error && (
             <div style={{
-              marginTop: "16px",
-              padding: "14px 16px",
-              borderRadius: "10px",
-              background: "#fee2e2",
+              marginTop: "14px",
+              padding: "10px 14px",
+              borderRadius: "6px",
+              background: "#fef2f2",
               border: "1px solid #fecaca",
               color: "#dc2626",
-              fontSize: "14px",
+              fontSize: "13px",
             }}>
-              ⚠ {error}
+              {error}
             </div>
           )}
 
           {/* Preview */}
           {preview && !loading && (
             <div style={{
-              marginTop: "16px",
-              padding: "20px",
-              borderRadius: "12px",
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
+              marginTop: "14px",
+              padding: "16px",
+              borderRadius: "6px",
+              background: "#fafaf9",
+              border: "1px solid #e7e5e4",
             }}>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "12px",
-              }}>
-                <span style={{ fontSize: "18px" }}>✅</span>
-                <span style={{ fontWeight: "700", color: "#15803d", fontSize: "15px" }}>
-                  成功讀取學生資料
-                </span>
-              </div>
+              <p style={{ fontSize: "12px", color: "#78716c", marginBottom: "10px", fontWeight: "500" }}>
+                讀取成功
+              </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                 {[
                   ["姓名", preview.chineseName],
@@ -216,16 +181,9 @@ export default function Upload() {
                   ["系所", preview.registerMajor],
                   ["年級", preview.departmentProgramGrade],
                 ].map(([label, val]) => (
-                  <div key={label} style={{
-                    background: "white",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    border: "1px solid #d1fae5",
-                  }}>
-                    <p style={{ color: "#64748b", fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "2px" }}>
-                      {label}
-                    </p>
-                    <p style={{ color: "#1e293b", fontSize: "14px", fontWeight: "600" }}>{val}</p>
+                  <div key={label}>
+                    <p style={{ color: "#a8a29e", fontSize: "11px", marginBottom: "2px" }}>{label}</p>
+                    <p style={{ color: "#1c1917", fontSize: "13px", fontWeight: "500" }}>{val}</p>
                   </div>
                 ))}
               </div>
@@ -233,7 +191,7 @@ export default function Upload() {
           )}
         </div>
 
-        <p style={{ textAlign: "center", color: "#94a3b8", fontSize: "12px", marginTop: "20px" }}>
+        <p style={{ textAlign: "center", color: "#a8a29e", fontSize: "12px", marginTop: "16px" }}>
           支援全人系統匯出的 JSON 格式
         </p>
       </div>

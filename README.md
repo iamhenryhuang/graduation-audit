@@ -65,9 +65,13 @@ git clone <repo-url>
 cd graduation-audit
 ```
 
-### 第 2 步：確認 `.env`
+### 第 2 步：建立 `.env`
 
-根目錄已有 `.env`，預設值如下，通常不需要修改：
+複製範本即可，預設值通常不需要修改：
+
+```bash
+cp .env.example .env
+```
 
 ```
 DB_HOST=127.0.0.1
@@ -78,6 +82,15 @@ DB_PASSWORD=123456
 ```
 
 ### 第 3 步：啟動後端與資料庫
+
+**方法一：使用腳本（推薦）**
+
+```bash
+chmod +x run.sh   # 第一次需要
+./run.sh up
+```
+
+**方法二：直接下指令**
 
 ```bash
 docker compose -f ./database/docker-compose.yml --env-file ./.env up -d --build
@@ -98,6 +111,14 @@ API 文件：`http://localhost:8000/docs`
 
 ### 第 4 步：啟動前端
 
+**方法一：使用腳本（另開一個終端）**
+
+```bash
+./run.sh frontend
+```
+
+**方法二：直接下指令**
+
 ```bash
 cd frontend
 npm install   # 第一次需要
@@ -105,6 +126,18 @@ npm run dev
 ```
 
 開啟瀏覽器前往 `http://localhost:5173`，上傳全人系統匯出的 JSON 即可使用。
+
+---
+
+## run.sh 腳本說明
+
+| 指令 | 說明 |
+|------|------|
+| `./run.sh up` | 啟動後端 + 資料庫 |
+| `./run.sh down` | 停止後端 + 資料庫 |
+| `./run.sh restart` | 重啟後端 + 資料庫 |
+| `./run.sh frontend` | 啟動前端 dev server |
+| `./run.sh logs` | 查看後端 + 資料庫 logs |
 
 ---
 
