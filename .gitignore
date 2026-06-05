@@ -2,13 +2,22 @@
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Node
 node_modules/
 dist/
+frontend/.vite/
 
 # Environment
 .env
+.env.local
+.env.*.local
 
 # VSCode
 .vscode/
@@ -18,3 +27,11 @@ postgres_data/
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data uploads (user data, not source)
+data/
