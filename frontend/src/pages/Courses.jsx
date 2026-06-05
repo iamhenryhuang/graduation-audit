@@ -3,15 +3,15 @@ import { useEffect, useState } from "react";
 const API = "http://localhost:8000";
 
 const STATUS_COLORS = {
-  "缺修": { bg: "#fee2e2", color: "#dc2626", label: "缺修" },
+  "缺修": { bg: "#fef2f2", color: "#dc2626", label: "缺修" },
 };
 
 const CATEGORY_STYLES = {
-  "必修": { bg: "#ede9fe", color: "#7c3aed", label: "必" },
-  "群修": { bg: "#dbeafe", color: "#1d4ed8", label: "群" },
-  "通識": { bg: "#dcfce7", color: "#15803d", label: "通" },
-  "國防": { bg: "#f1f5f9", color: "#475569", label: "防" },
-  "選修": { bg: "#fef3c7", color: "#b45309", label: "選" },
+  "必修": { bg: "#f3f0ff", color: "#6d28d9", label: "必" },
+  "群修": { bg: "#eff6ff", color: "#1d4ed8", label: "群" },
+  "通識": { bg: "#f0fdf4", color: "#15803d", label: "通" },
+  "國防": { bg: "#f5f5f4", color: "#57534e", label: "防" },
+  "選修": { bg: "#fefce8", color: "#92400e", label: "選" },
 };
 
 function groupBySemester(courses) {
