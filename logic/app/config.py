@@ -10,7 +10,7 @@ load_dotenv(os.path.join(_ROOT, ".env"))
 DB_URL = (
     f"postgresql+psycopg2://"
     f"{os.getenv('DB_USER', 'admin')}:{os.getenv('DB_PASSWORD', '123456')}"
-    f"@{os.getenv('DB_HOST', 'localhost')}:{int(os.getenv('DB_PORT', '5433'))}"
+    f"@{os.getenv('DB_HOST', 'localhost')}:{int(os.getenv('DB_PORT', '5432'))}"
     f"/{os.getenv('DB_NAME', 'myapp')}"
 )
 
