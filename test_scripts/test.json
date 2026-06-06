@@ -1,0 +1,396 @@
+[
+  {
+    "課業學習": {
+      "totalCredits": "128",
+      "coursePlan": {
+        "groupPoint": "",
+        "liberalTotal": "[通識已達標]",
+        "requiredPoint": "",
+        "programName": "",
+        "programRemark": "",
+        "groupRemark": "",
+        "liberalEnglish": "",
+        "coursePlanTimestamp": "20260520",
+        "liberalChinese": "",
+        "commonLanguage": "",
+        "liberalGeneral": "",
+        "requiredRemark": "[缺策略管理1]",
+        "graduationCredit": "",
+        "commonPhysical": "",
+        "commonLanguageCount": "2",
+        "coursePlanSchyy": "111",
+        "commonPhysicalCount": "4"
+      },
+      "rankingClass": "15",
+      "aboutMe": {
+        "chineseName": "林佳穎",
+        "instructor": "",
+        "minor2": "",
+        "doubleMajor": "經濟系（112）",
+        "registerMinor": "會計學系",
+        "minor1": "會計系（113）",
+        "registerMajor": "企業管理學系",
+        "englishName": "LIN, CHIA-YING",
+        "thesisTitle": "",
+        "program": "",
+        "studentIdentity2": "",
+        "studentIdentity": "台生(一般)",
+        "addMjrYN": "Y",
+        "studentNumber": "111204015",
+        "registerOtherProgramList": [],
+        "registerDoubleMajor": "經濟學系",
+        "collegeEnglishExemption": "已免修",
+        "registrationStatus": "本系生",
+        "departmentProgramGrade": "企管四"
+      },
+      "showTcres": "",
+      "graduationLanguageList": [],
+      "abroadGradeRecordList": [],
+      "rankingClassDenom": "60",
+      "rankingDepartmentDenom": "60",
+      "rankingDepartment": "15",
+      "waivedCourseList": [],
+      "averageScoreList": [
+        {
+          "academicYear": "113",
+          "semester": "2",
+          "averageScore": "86.50",
+          "totalCredits": "21",
+          "averageCreditsOfSameGrader": "18.50",
+          "averageScoresOfSameGrader": "79.20",
+          "classRankPercentage": "25.00 %",
+          "departmentRankPercentage": "25.00 %",
+          "rankingClass": "15 / 60",
+          "rankingDepartmentNumer": "15",
+          "rankingClassDenom": "60",
+          "rankingClassNumer": "15",
+          "rankingDepartmentDenom": "60",
+          "rankingDepartment": "15 / 60"
+        },
+        {
+          "academicYear": "113",
+          "semester": "1",
+          "averageScore": "84.20",
+          "totalCredits": "23",
+          "averageCreditsOfSameGrader": "19.10",
+          "averageScoresOfSameGrader": "78.80",
+          "classRankPercentage": "30.00 %",
+          "departmentRankPercentage": "30.00 %",
+          "rankingClass": "18 / 60",
+          "rankingDepartmentNumer": "18",
+          "rankingClassDenom": "60",
+          "rankingClassNumer": "18",
+          "rankingDepartmentDenom": "60",
+          "rankingDepartment": "18 / 60"
+        }
+      ],
+      "alertForCreditList": [],
+      "gradeRecordList": [
+        {
+          "AcademicYear": "113",
+          "GradeRecords": [
+            {
+              "academicYear": "113",
+              "score": "88.00",
+              "courseCode": "000219551",
+              "semester": "2",
+              "courseName": "行銷管理",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1132",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "113",
+              "score": "82.00",
+              "courseCode": "000318041",
+              "semester": "2",
+              "courseName": "中級會計學（二）",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1132",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "113",
+              "score": "95.00",
+              "courseCode": "002347011",
+              "semester": "2",
+              "courseName": "體育[男女合班]—羽球",
+              "credit": "1.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1132",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "113",
+              "score": "85.00",
+              "courseCode": "000348051",
+              "semester": "1",
+              "courseName": "人力資源管理",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1131",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "113",
+              "score": "92.00",
+              "courseCode": "046001081",
+              "semester": "1",
+              "courseName": "當代心理學與生活",
+              "credit": "3.0",
+              "remark": "社會通",
+              "requiredOrElectiveCourse": "群",
+              "academicYearSemester": "1131",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "113",
+              "score": "91.00",
+              "courseCode": "705001011",
+              "semester": "1",
+              "courseName": "作業系統",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1131",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "113",
+              "score": "83.00",
+              "courseCode": "705002011",
+              "semester": "1",
+              "courseName": "機率論",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1131",
+              "scoreIfPass": ""
+            }
+          ]
+        },
+        {
+          "AcademicYear": "112",
+          "GradeRecords": [
+            {
+              "academicYear": "112",
+              "score": "80.00",
+              "courseCode": "308001001",
+              "semester": "2",
+              "courseName": "總體經濟學",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1122",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "112",
+              "score": "89.00",
+              "courseCode": "705003021",
+              "semester": "2",
+              "courseName": "演算法",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1122",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "112",
+              "score": "84.00",
+              "courseCode": "705004021",
+              "semester": "2",
+              "courseName": "計算機結構與組織",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1122",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "112",
+              "score": "85.00",
+              "courseCode": "705005021",
+              "semester": "2",
+              "courseName": "程式能力檢定",
+              "credit": "0.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1122",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "112",
+              "score": "89.00",
+              "courseCode": "046004001",
+              "semester": "1",
+              "courseName": "企業概論",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1121",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "112",
+              "score": "81.00",
+              "courseCode": "705006011",
+              "semester": "1",
+              "courseName": "線性代數",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1121",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "112",
+              "score": "86.00",
+              "courseCode": "705007011",
+              "semester": "1",
+              "courseName": "資料結構",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1121",
+              "scoreIfPass": ""
+            }
+          ]
+        },
+        {
+          "AcademicYear": "111",
+          "GradeRecords": [
+            {
+              "academicYear": "111",
+              "score": "87.00",
+              "courseCode": "705008021",
+              "semester": "2",
+              "courseName": "物件導向程式設計",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1112",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "111",
+              "score": "78.00",
+              "courseCode": "705009021",
+              "semester": "2",
+              "courseName": "離散數學",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1112",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "111",
+              "score": "85.00",
+              "courseCode": "705010011",
+              "semester": "1",
+              "courseName": "微積分甲",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1111",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "111",
+              "score": "90.00",
+              "courseCode": "705011011",
+              "semester": "1",
+              "courseName": "計算機程式設計（一）",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1111",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "111",
+              "score": "82.00",
+              "courseCode": "705012011",
+              "semester": "1",
+              "courseName": "數位系統導論",
+              "credit": "3.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1111",
+              "scoreIfPass": ""
+            },
+            {
+              "academicYear": "111",
+              "score": "88.00",
+              "courseCode": "705013011",
+              "semester": "1",
+              "courseName": "數位系統實驗",
+              "credit": "1.0",
+              "remark": "",
+              "requiredOrElectiveCourse": "必",
+              "academicYearSemester": "1111",
+              "scoreIfPass": ""
+            }
+          ]
+        }
+      ],
+      "conductRecordList": [
+        {
+          "score": 88.0,
+          "academicYear": "113",
+          "semester": "2"
+        },
+        {
+          "score": 89.0,
+          "academicYear": "113",
+          "semester": "1"
+        },
+        {
+          "score": 87.0,
+          "academicYear": "112",
+          "semester": "2"
+        }
+      ],
+      "enrollmentHistoryList": [
+        {
+          "gradeName": "企管四",
+          "registerStatus": "註冊",
+          "academicYearSemester": "114-1"
+        },
+        {
+          "gradeName": "企管三",
+          "registerStatus": "註冊",
+          "academicYearSemester": "113-2"
+        },
+        {
+          "gradeName": "企管三",
+          "registerStatus": "註冊",
+          "academicYearSemester": "113-1"
+        }
+      ],
+      "alertForEvaluationList": [],
+      "totalAverageScore": {
+        "averageScore": "85.35",
+        "totalCredits": "128",
+        "averageCreditsOfSameGrader": "105.20",
+        "averageScoresOfSameGrader": "79.00",
+        "classRankPercentage": "25.00 %",
+        "departmentRankPercentage": "25.00 %",
+        "rankingClass": "15 / 60",
+        "rankingDepartmentNumer": "15",
+        "rankingClassDenom": "60",
+        "rankingClassNumer": "15",
+        "rankingDepartmentDenom": "60",
+        "rankingDepartment": "15 / 60"
+      }
+    }
+  }
+]
