@@ -61,6 +61,17 @@ function MissingTag({ name }) {
   );
 }
 
+function RecommendTag({ name }) {
+  return (
+    <span style={{
+      display: "inline-block", padding: "3px 8px", borderRadius: "4px",
+      background: "#eff6ff", color: "#1d4ed8",
+      fontSize: "12px", margin: "2px 3px",
+      border: "1px solid #bfdbfe",
+    }}>{name}</span>
+  );
+}
+
 function GroupBar({ label, credit, target }) {
   const pct = Math.min((credit / target) * 100, 100);
   const ok = credit >= target;
@@ -97,7 +108,7 @@ export default function Audit({ studentId }) {
   if (loading) return <div className="loading-screen"><div className="spinner" />載入中...</div>;
   if (!audit) return <div className="loading-screen">載入失敗</div>;
 
-  const { summary, required, group, general, physical, elective } = audit;
+  const { summary, required, group, general, physical, elective, recommendations } = audit;
   const remain = summary.total_required - summary.total_earned;
 
   return (
@@ -139,6 +150,12 @@ export default function Audit({ studentId }) {
                 <div>{required.missing.map((name, i) => <MissingTag key={i} name={name} />)}</div>
               </div>
             )}
+            {recommendations?.required?.length > 0 && (
+              <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #f5f5f4" }}>
+                <p style={{ fontSize: "12px", color: "#78716c", marginBottom: "5px" }}>建議補修</p>
+                <div>{recommendations.required.map((name, i) => <RecommendTag key={i} name={name} />)}</div>
+              </div>
+            )}
           </SectionCard>
 
           <SectionCard title="專業群修" passed={group.is_passed}>
@@ -156,10 +173,24 @@ export default function Audit({ studentId }) {
                 </div>
               </div>
               <GroupBar label="群A（需 6 學分）" credit={group.group_credits["群A"] || 0} target={6} />
+              {recommendations?.group?.["群A"]?.length > 0 && (
+                <div style={{ marginBottom: "10px" }}>
+                  <p style={{ fontSize: "12px", color: "#78716c", marginBottom: "4px" }}>群A 建議補修</p>
+                  <div>{recommendations.group["群A"].map((name, i) => <RecommendTag key={i} name={name} />)}</div>
+                </div>
+              )}
               {Object.entries(group.group_credits)
                 .filter(([name]) => name !== "群A")
                 .map(([name, credit]) => (
-                  <GroupBar key={name} label={name} credit={credit} target={3} />
+                  <div key={name}>
+                    <GroupBar label={name} credit={credit} target={3} />
+                    {recommendations?.group?.[name]?.length > 0 && (
+                      <div style={{ marginBottom: "10px" }}>
+                        <p style={{ fontSize: "12px", color: "#78716c", marginBottom: "4px" }}>{name} 建議補修</p>
+                        <div>{recommendations.group[name].map((n, i) => <RecommendTag key={i} name={n} />)}</div>
+                      </div>
+                    )}
+                  </div>
                 ))}
             </div>
           </SectionCard>

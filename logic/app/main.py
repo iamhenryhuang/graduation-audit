@@ -8,6 +8,9 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import json
+import os
+
 from app.db.importer import import_student_json
 from app.db.queries import fetch_student, fetch_course_records
 from app.audit.cs_rules.cs_112 import Required, Group
@@ -15,6 +18,54 @@ from app.audit.general_rules.general_rules import General
 from app.audit.general_rules.elective import Elective
 from app.audit.general_rules.pc_rules import Physical
 from gpa import compute_gpa
+
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+
+def _load_group_data() -> dict:
+    with open(os.path.join(_DATA_DIR, "group.json"), encoding="utf-8") as f:
+        return json.load(f)["group_course"]
+
+def _load_required_data() -> list:
+    with open(os.path.join(_DATA_DIR, "required.json"), encoding="utf-8") as f:
+        return json.load(f)["required_course"]
+
+def _build_recommendations(req_missing: list, grp: dict, records: list) -> dict:
+    taken_names = {r["course_name"] for r in records}
+    group_data = _load_group_data()
+    group_recs: dict[str, list] = {}
+
+    # 群A：group_a_ok=False 才推
+    # A/B 同班（上學期）、C/D 同班（下學期）—— 已選其中一堂就不推同班另一堂
+    if not grp["group_a_ok"]:
+        ab_pair = ["資訊專題（A）", "資訊專題（B）"]
+        cd_pair = ["資訊專題（C）", "資訊專題（D）"]
+        took_ab = any(n in taken_names for n in ab_pair)
+        took_cd = any(n in taken_names for n in cd_pair)
+
+        recs_a = []
+        if not took_ab:
+            recs_a.append(ab_pair[0])
+        if not took_cd:
+            recs_a.append(cd_pair[0])
+        if recs_a:
+            group_recs["群A"] = recs_a
+
+    # 群B~E：domain_ok=False 才需要推
+    # group_credits[name]==0 代表該群完全沒有通過的課（與 Group() 判斷一致）
+    if not grp["domain_ok"]:
+        for name in ["群B", "群C", "群D", "群E"]:
+            if grp["group_credits"].get(name, 0) == 0:
+                recs = [
+                    c["course_name"] for c in group_data.get(name, [])
+                    if c["course_name"] not in taken_names
+                ]
+                if recs:
+                    group_recs[name] = recs
+
+    return {
+        "required": req_missing,
+        "group": group_recs,
+    }
 
 TOTAL_REQUIRED = 128.0
 REQ_REQUIRED = 36.0
@@ -100,6 +151,7 @@ def get_audit(student_id: str):
     if fetch_student(student_id) is None:
         raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
 
+    records = fetch_course_records(student_id, latest_only=False)
     req_ok, req_missing, req_passed, req_credits = Required(student_id)
     grp = Group(student_id)
     gen = General(student_id)
@@ -126,6 +178,8 @@ def get_audit(student_id: str):
         total_earned >= TOTAL_REQUIRED
         and req_ok and grp_ok and gen["is_passed"] and phy["is_passed"] and elec_ok
     )
+
+    recommendations = _build_recommendations(req_missing, grp, records)
 
     return to_jsonable({
         "summary": {
@@ -160,4 +214,5 @@ def get_audit(student_id: str):
             "required_credits": ELEC_REQUIRED,
             "courses": elec_courses,
         },
+        "recommendations": recommendations,
     })
