@@ -274,3 +274,7 @@ SELECT student_id, chinese_name FROM students;
 ### ER Diagram
 
 ![ER Diagram](docs/ERDiagram.png)
+
+### 系統架構圖
+
+![系統架構圖](docs/系統架構圖.png)
