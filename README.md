@@ -262,3 +262,19 @@ SELECT student_id, chinese_name FROM students;
 ## 網站測試連結
 
 傳送門：[點此前往 Graduation Audit](https://graduation-audit.vercel.app/)
+
+---
+
+## 系統設計
+
+### 領域分析圖
+
+![領域分析圖](docs/領域分析圖.png)
+
+### ER Diagram
+
+![ER Diagram](docs/ERDiagram.png)
+
+### 系統架構圖
+
+![系統架構圖](docs/系統架構圖.png)
