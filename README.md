@@ -1,7 +1,9 @@
 # Graduation Audit System
 
-以資訊科學系 112 學年入學畢業門檻為基準，分析學生必修、群修、通識、體育、自由選修各類別差幾學分畢業。
-資料來源為全人系統匯出的 JSON，僅審查原系畢業資格（排除雙主修、輔系）。
+針對國立政治大學資訊科學系 112 學年入學學生設計的畢業學分審核系統。
+學生上傳全人系統匯出的選課紀錄 JSON，系統自動審查必修、群修、通識、體育、自由選修各類別是否達到畢業門檻（總計 128 學分），並視覺化呈現學分進度與缺漏項目。
+
+> 目前僅支援資科系 112 學年入學畢業規則，不審查雙主修、輔系資格。
 
 ---
 
@@ -167,30 +169,6 @@ python3 run.py     # macOS/Linux
 
 > 修改 `logic/run.py` 底部 `main()` 裡的 `student_id` 可切換學生。
 
-**輸出範例：**
-
-```
-════════════════════════════════════════════════════════
-  專業必修
-════════════════════════════════════════════════════════
-  狀態        : ✓ 已完成
-  已通過      : 18 門
-
-════════════════════════════════════════════════════════
-  畢業審核總結
-════════════════════════════════════════════════════════
-  分類        已獲       需求   狀態
-  ──────────────────────────────────────────────────────
-  專業必修     36.0  /   36.0   ✓
-  專業群修     15.0  /   15.0   ✓
-  通識         28.0  /   28.0   ✓
-  體育          4.0  /    4.0   ✓
-  自由選修     45.0  /   45.0   ✓
-  ──────────────────────────────────────────────────────
-  總計        128.0  /  128.0   ✓
-
-  ✓ 符合畢業資格
-```
 
 ### GPA 計算
 
@@ -257,24 +235,193 @@ SELECT student_id, chinese_name FROM students;
 
 後端容器內部透過 Docker network 直連 `postgres:5432`，不走 host port，`DB_PORT` 僅供本機開發使用。
 
----
-
-## 網站測試連結
-
-傳送門：[點此前往 Graduation Audit](https://graduation-audit.vercel.app/)
-
----
 
 ## 系統設計
 
 ### 領域分析圖
 
-![領域分析圖](docs/領域分析圖.png)
+```mermaid
+classDiagram
+    direction LR
+
+    class 學生 {
+        學號
+        系所
+        入學年度
+        英文免修
+    }
+
+    class 修課紀錄 {
+        學年
+        學期
+        成績
+        課程狀態
+        是否通識
+        是否國防
+    }
+
+    class 課程 {
+        課號
+        課名
+        學分數
+    }
+
+    class 畢業規則 {
+        必修 36學分
+        群修 15學分 群A上限6學分 需涵蓋3群
+        通識 28學分
+        體育 4學分
+        選修 45學分
+        總計 128學分
+    }
+
+    class 審核結果 {
+        是否符合畢業資格
+        必修：達標 缺漏課程清單
+        群修：達標 各群學分
+        通識：達標 各領域學分
+        體育：達標 缺少學分
+        選修：達標 已修學分
+    }
+
+    學生 "1" --> "*" 修課紀錄 : 擁有
+    修課紀錄 "*" --> "1" 課程 : 對應
+    學生 --> 審核結果 : 產生
+    畢業規則 --> 審核結果 : 定義門檻
+    修課紀錄 --> 審核結果 : 作為依據
+```
 
 ### ER Diagram
 
-![ER Diagram](docs/ERDiagram.png)
+```mermaid
+erDiagram
+    students ||--o{ course_record : "擁有"
+    all_course ||--o{ course_record : "對應"
+    all_course ||--o{ required_course : "是"
+    all_course ||--o| cs_group : "是"
+    all_course ||--o| general_course : "是"
+    general_course ||--o{ general_course_category : "屬於"
+    general_category ||--o{ general_course_category : "分類"
+
+    students {
+        varchar student_id PK
+        varchar chinese_name
+        varchar english_name
+        varchar department
+        varchar double_major
+        varchar minor
+        integer enrollment_year
+        boolean english_exemption
+    }
+
+    all_course {
+        varchar course_code PK
+        varchar course_name
+        numeric credit
+        varchar dept
+    }
+
+    course_record {
+        serial id PK
+        varchar student_id FK
+        varchar course_code FK
+        varchar academic_year
+        varchar academic_semester
+        numeric score
+        varchar course_status
+        boolean is_general
+        boolean is_defense
+    }
+
+    graduation_rule {
+        serial id PK
+        varchar department
+        integer applicable_year
+        integer total_credit
+        integer required_credit
+        integer group_credit
+        integer general_credit
+    }
+
+    required_course {
+        serial required_uid PK
+        varchar course_code FK
+        varchar course_name
+        varchar take_in_dept
+        varchar take_in_year
+    }
+
+    cs_group {
+        serial group_uid PK
+        varchar course_code FK
+        varchar course_name
+        varchar course_class
+        varchar take_in_year
+    }
+
+    general_course {
+        varchar course_code PK
+        varchar course_name
+        boolean is_core
+    }
+
+    general_course_category {
+        varchar course_code FK
+        varchar category_code FK
+    }
+
+    general_category {
+        varchar category_code PK
+        varchar category_name
+    }
+```
 
 ### 系統架構圖
 
-![系統架構圖](docs/系統架構圖.png)
+```mermaid
+flowchart TD
+
+    %% =========================
+    %% User
+    %% =========================
+
+    User[使用者（瀏覽器）]
+
+    %% =========================
+    %% Frontend
+    %% =========================
+
+    FE[Frontend Web App<br/>React + Vite :5173]
+
+    User -->|操作介面| FE
+
+    %% =========================
+    %% API Layer
+    %% =========================
+
+    API[FastAPI Server :8000]
+
+    FE -->|HTTP REST| API
+
+    %% =========================
+    %% Business Logic
+    %% =========================
+
+    IMP[importer.py<br/>JSON 解析 + 匯入]
+    AUD[audit_engine<br/>必修 / 群修 / 通識 / 體育 / 選修]
+    GPA[gpa.py<br/>GPA 計算]
+
+    API -->|POST /upload| IMP
+    API -->|GET /audit| AUD
+    API -->|GET /gpa| GPA
+
+    %% =========================
+    %% Database
+    %% =========================
+
+    PG[(PostgreSQL :5410)]
+
+    IMP -->|INSERT| PG
+    AUD -->|SELECT| PG
+    GPA -->|SELECT| PG
+```
