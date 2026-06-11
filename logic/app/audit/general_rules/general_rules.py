@@ -26,13 +26,17 @@ GENERAL_TOTAL_WITH_MIN_CHINESE = 19.0
 GENERAL_TOTAL_WITH_MAX_CHINESE = 16.0
 PASSING_SCORE = 60.0
 PASSING_STATUSES = {"通過"}
-IGNORED_STATUSES = {"停修", "成績未到或無成績"}
+UNGRADED_STATUS = "成績未到或無成績"
+IGNORED_STATUSES = {"停修", UNGRADED_STATUS}
 ENGLISH_COURSE_NAMES = {"大學英文（一）", "大學英文（二）"}
 CHINESE_COURSE_KEYWORDS = ("國文－", "進階國文－")
 ENGLISH_COURSE_CODE_PREFIX = "599"
 
 
-def _is_passed(score, course_status: str | None) -> bool:
+def _is_passed(score, course_status: str | None, assume_ungraded_passed: bool = False) -> bool:
+    # 模擬模式：成績未出的課視為通過（停修仍排除）
+    if assume_ungraded_passed and course_status == UNGRADED_STATUS:
+        return True
     if course_status in IGNORED_STATUSES:
         return False
     if course_status in PASSING_STATUSES:
@@ -56,7 +60,7 @@ def _is_chinese_course(course_name: str) -> bool:
     return any(keyword in course_name for keyword in CHINESE_COURSE_KEYWORDS)
 
 
-def _fetch_general_courses(student_id: str) -> list[dict]:
+def _fetch_general_courses(student_id: str, assume_ungraded_passed: bool = False) -> list[dict]:
     # CTE: 該學生每門課的最新一次嘗試（含 is_general 過濾，給通識領域查詢用）
     latest_general = (
         select(
@@ -172,7 +176,7 @@ def _fetch_general_courses(student_id: str) -> list[dict]:
             "course_status": row.course_status,
             "is_core":       row.is_core,
             "domains":       tuple(domains),
-            "passed":        _is_passed(row.score, row.course_status),
+            "passed":        _is_passed(row.score, row.course_status, assume_ungraded_passed),
         })
         seen_codes.add(row.course_code)
 
@@ -187,7 +191,7 @@ def _fetch_general_courses(student_id: str) -> list[dict]:
             "course_status": row.course_status,
             "is_core":       False,
             "domains":       (),
-            "passed":        _is_passed(row.score, row.course_status),
+            "passed":        _is_passed(row.score, row.course_status, assume_ungraded_passed),
         })
 
     return courses
@@ -326,8 +330,8 @@ def _build_language_summary(courses: list[dict]) -> dict:
     }
 
 
-def General(student_id: str) -> dict:
-    courses = _fetch_general_courses(student_id)
+def General(student_id: str, assume_ungraded_passed: bool = False) -> dict:
+    courses = _fetch_general_courses(student_id, assume_ungraded_passed)
     domain_credits, assigned_courses = _build_assignment(courses)
     language_summary = _build_language_summary(courses)
 

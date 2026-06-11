@@ -25,11 +25,20 @@ def _resolve_category(is_general: bool, is_defense: bool, is_required: bool, is_
     return "選修"
 
 
-def fetch_course_records(student_id: str, latest_only: bool = True) -> list[dict]:
+UNGRADED_STATUS = "成績未到或無成績"
+
+
+def fetch_course_records(
+    student_id: str,
+    latest_only: bool = True,
+    assume_ungraded_passed: bool = False,
+) -> list[dict]:
     """Fetch course records for a student.
 
     latest_only=True  → one row per course_code (latest attempt), used by audit logic.
     latest_only=False → all attempts across all semesters, used by GPA calculation.
+    assume_ungraded_passed=True → 模擬模式：把「成績未到或無成績」的課視為「通過」，
+    供「假設本學期全過能否畢業」的預估審核使用（停修不受影響）。
     """
     stmt = (
         select(
@@ -68,7 +77,11 @@ def fetch_course_records(student_id: str, latest_only: bool = True) -> list[dict
         {
             "course_code": row.course_code,
             "score": row.score,
-            "course_status": row.course_status,
+            "course_status": (
+                "通過"
+                if assume_ungraded_passed and row.course_status == UNGRADED_STATUS
+                else row.course_status
+            ),
             "academic_year": row.academic_year,
             "academic_semester": row.academic_semester,
             "academic_year_semester": f"{row.academic_year}{row.academic_semester}",

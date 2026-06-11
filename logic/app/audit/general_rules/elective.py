@@ -17,8 +17,15 @@ def _is_excluded_from_elective(course: dict) -> bool:
 # general : General() 回傳的 dict，其中 used_courses 為 {"general":[], "english":[], "chinese":[], "core":[]}
 # pc      : Physical() 回傳的 dict，其中 used_courses 為 list
 # return (總選修學分, 被計入選修的課程名稱list)
-def Elective(student_id: str, require: set, group: list, general: dict, pc: dict):
-    courses = fetch_course_records(student_id)
+def Elective(
+    student_id: str,
+    require: set,
+    group: list,
+    general: dict,
+    pc: dict,
+    assume_ungraded_passed: bool = False,
+):
+    courses = fetch_course_records(student_id, assume_ungraded_passed=assume_ungraded_passed)
 
     # require 是 course_code set（來自 Required()，避免同名不同課混淆）
     used_codes = set(require)

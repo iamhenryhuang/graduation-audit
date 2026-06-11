@@ -147,21 +147,29 @@ def get_gpa(student_id: str):
 
 
 @app.get("/audit/{student_id}")
-def get_audit(student_id: str):
+def get_audit(
+    student_id: str,
+    assume_current_passed: bool = Query(
+        False, description="模擬模式：假設成績未出的課程（本學期修課）全數通過"
+    ),
+):
     if fetch_student(student_id) is None:
         raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
 
     records = fetch_course_records(student_id, latest_only=False)
-    req_ok, req_missing, req_passed, req_credits = Required(student_id)
-    grp = Group(student_id)
-    gen = General(student_id)
-    phy = Physical(student_id)
+    req_ok, req_missing, req_passed, req_credits = Required(
+        student_id, assume_ungraded_passed=assume_current_passed
+    )
+    grp = Group(student_id, assume_ungraded_passed=assume_current_passed)
+    gen = General(student_id, assume_ungraded_passed=assume_current_passed)
+    phy = Physical(student_id, assume_ungraded_passed=assume_current_passed)
     elec_total, elec_courses = Elective(
         student_id,
         require=req_passed,
         group=grp["used_courses"],
         general=gen,
         pc=phy,
+        assume_ungraded_passed=assume_current_passed,
     )
 
     gen_s = gen["summary"]
@@ -186,6 +194,7 @@ def get_audit(student_id: str):
             "total_earned": total_earned,
             "total_required": TOTAL_REQUIRED,
             "is_graduated": total_ok,
+            "is_simulated": assume_current_passed,
         },
         "required": {
             "is_passed": req_ok,
