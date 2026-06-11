@@ -11,8 +11,8 @@ def _is_passed(course: dict) -> bool:
     return (score is not None and score >= PASS) or course["course_status"] == "通過"
 
 
-def Physical(student_id: str) -> dict:
-    courses = fetch_course_records(student_id)
+def Physical(student_id: str, assume_ungraded_passed: bool = False) -> dict:
+    courses = fetch_course_records(student_id, assume_ungraded_passed=assume_ungraded_passed)
 
     passed_courses = []
     for course in courses:

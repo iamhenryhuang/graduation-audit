@@ -1,268 +1,178 @@
-import { useEffect, useState } from "react";
-
-const API = "http://localhost:8000";
-
-const STATUS_COLORS = {
-  "缺修": { bg: "#fef2f2", color: "#dc2626", label: "缺修" },
-};
-
-const CATEGORY_STYLES = {
-  "必修": { bg: "#f3f0ff", color: "#6d28d9", label: "必" },
-  "群修": { bg: "#eff6ff", color: "#1d4ed8", label: "群" },
-  "通識": { bg: "#f0fdf4", color: "#15803d", label: "通" },
-  "國防": { bg: "#f5f5f4", color: "#57534e", label: "防" },
-  "選修": { bg: "#fefce8", color: "#92400e", label: "選" },
-};
+import { useMemo, useState } from "react";
+import { useStudent } from "../context/student";
+import { useApi } from "../hooks/useApi";
+import {
+  Card,
+  CategoryBadge,
+  ErrorState,
+  Loading,
+  PageHeader,
+  ScoreText,
+} from "../components/ui";
+import { CATEGORIES } from "../lib/categories";
+import { ChevronDownIcon, SearchIcon } from "../components/Icons";
 
 function groupBySemester(courses) {
-  const map = {};
+  const map = new Map();
   for (const c of courses) {
     const key = `${c.academic_year}-${c.academic_semester}`;
-    if (!map[key]) map[key] = { year: c.academic_year, semester: c.academic_semester, courses: [] };
-    map[key].courses.push(c);
+    if (!map.has(key)) {
+      map.set(key, { key, year: c.academic_year, semester: c.academic_semester, courses: [] });
+    }
+    map.get(key).courses.push(c);
   }
-  return Object.values(map);
+  return [...map.values()].sort(
+    (a, b) => a.year - b.year || a.semester - b.semester
+  );
 }
 
-export default function Courses({ studentId }) {
-  const [courses, setCourses] = useState([]);
+const chipClass = (active) =>
+  `shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+    active
+      ? "bg-slate-900 text-white"
+      : "bg-white text-slate-500 ring-1 ring-slate-200 ring-inset hover:bg-slate-50"
+  }`;
+
+export default function Courses() {
+  const { studentId } = useStudent();
+  const { data: courses, loading, error, retry } = useApi(`/courses/${studentId}`);
   const [keyword, setKeyword] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState(null);
   const [openSems, setOpenSems] = useState({});
 
-  useEffect(() => {
-    fetch(`${API}/courses/${studentId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setCourses(data);
-      })
-      .finally(() => setLoading(false));
-  }, [studentId]);
+  const semesters = useMemo(() => {
+    if (!courses) return [];
+    const filtered = courses.filter(
+      (c) =>
+        (!keyword || c.course_name.includes(keyword.trim())) &&
+        (!category || c.category === category)
+    );
+    return groupBySemester(filtered);
+  }, [courses, keyword, category]);
 
-  if (loading) return (
-    <div className="loading-screen">
-      <div className="spinner" />
-      載入中...
-    </div>
-  );
+  if (loading) return <Loading />;
+  if (error || !courses) return <ErrorState message={error} onRetry={retry} />;
 
-  const filtered = keyword
-    ? courses.filter((c) => c.course_name.includes(keyword))
-    : null;
-
-  const semesters = groupBySemester(filtered ?? courses);
-
-  const toggleSem = (key) =>
-    setOpenSems((prev) => ({ ...prev, [key]: !prev[key] }));
-
-  const totalCredits = (semCourses) =>
-    semCourses.reduce((sum, c) => sum + (c.credit || 0), 0).toFixed(1);
+  const filtering = Boolean(keyword || category);
+  const shownCount = semesters.reduce((sum, s) => sum + s.courses.length, 0);
+  // 篩選時自動展開所有學期，方便瀏覽結果
+  const isOpen = (key) => filtering || Boolean(openSems[key]);
+  const toggleSem = (key) => setOpenSems((prev) => ({ ...prev, [key]: !prev[key] }));
+  const setAll = (open) =>
+    setOpenSems(open ? Object.fromEntries(semesters.map((s) => [s.key, true])) : {});
 
   return (
-    <div style={{ maxWidth: "900px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "28px" }}>
-        <h1 style={{ fontSize: "24px", color: "#1e293b", marginBottom: "4px" }}>修課紀錄</h1>
-        <p style={{ color: "#64748b", fontSize: "14px" }}>
-          共 {courses.length} 門課程
-          {filtered && `，搜尋結果 ${filtered.length} 筆`}
-        </p>
-      </div>
+    <div>
+      <PageHeader
+        title="修課紀錄"
+        description={`共 ${courses.length} 門課程${filtering ? `，符合條件 ${shownCount} 筆` : ""}`}
+      >
+        {!filtering && (
+          <div className="flex gap-2">
+            <button onClick={() => setAll(true)} className={chipClass(false)}>
+              展開全部
+            </button>
+            <button onClick={() => setAll(false)} className={chipClass(false)}>
+              收合全部
+            </button>
+          </div>
+        )}
+      </PageHeader>
 
-      {/* Search bar */}
-      <div style={{ marginBottom: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
-        <div style={{ position: "relative" }}>
-          <span style={{
-            position: "absolute", left: "12px", top: "50%",
-            transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none",
-          }}>🔍</span>
+      {/* 搜尋 + 類別篩選 */}
+      <div className="mb-5 flex flex-wrap items-center gap-2.5">
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="搜尋課程名稱..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            style={{
-              paddingLeft: "36px", paddingRight: "16px",
-              paddingTop: "10px", paddingBottom: "10px",
-              borderRadius: "10px", border: "1px solid #e2e8f0",
-              fontSize: "14px", width: "280px", background: "white",
-              color: "#1e293b", outline: "none",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-            }}
+            className="w-64 rounded-full border border-slate-200 bg-white py-2 pr-4 pl-10 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
           />
         </div>
-        {keyword && (
-          <button
-            onClick={() => setKeyword("")}
-            style={{
-              padding: "8px 14px", borderRadius: "8px", border: "1px solid #e2e8f0",
-              background: "white", color: "#64748b", fontSize: "13px", cursor: "pointer",
-            }}
-          >
-            清除
+        <div className="flex gap-1.5 overflow-x-auto">
+          <button onClick={() => setCategory(null)} className={chipClass(!category)}>
+            全部
           </button>
-        )}
-        {/* Expand / Collapse all */}
-        {!keyword && (
-          <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
+          {CATEGORIES.map((name) => (
             <button
-              onClick={() => {
-                const all = {};
-                semesters.forEach(s => { all[`${s.year}-${s.semester}`] = true; });
-                setOpenSems(all);
-              }}
-              style={{
-                padding: "8px 14px", borderRadius: "8px", border: "1px solid #e2e8f0",
-                background: "white", color: "#64748b", fontSize: "13px", cursor: "pointer",
-              }}
-            >展開全部</button>
-            <button
-              onClick={() => setOpenSems({})}
-              style={{
-                padding: "8px 14px", borderRadius: "8px", border: "1px solid #e2e8f0",
-                background: "white", color: "#64748b", fontSize: "13px", cursor: "pointer",
-              }}
-            >收合全部</button>
-          </div>
-        )}
-      </div>
-
-      {/* Legend */}
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
-        {Object.entries(CATEGORY_STYLES).map(([name, style]) => (
-          <span key={name} style={{
-            display: "inline-flex", alignItems: "center", gap: "5px",
-            fontSize: "12px", color: "#64748b",
-          }}>
-            <span style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: "20px", height: "20px", borderRadius: "5px",
-              fontSize: "10px", fontWeight: "700",
-              background: style.bg, color: style.color,
-            }}>{style.label}</span>
-            {name}
-          </span>
-        ))}
-      </div>
-
-      {/* Semester accordion */}
-      {semesters.length === 0 ? (
-        <div className="card" style={{ padding: "48px", textAlign: "center", color: "#94a3b8" }}>
-          找不到相符的課程
+              key={name}
+              onClick={() => setCategory(category === name ? null : name)}
+              className={chipClass(category === name)}
+            >
+              {name}
+            </button>
+          ))}
         </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {semesters.map((sem) => {
-            const key = `${sem.year}-${sem.semester}`;
-            const isOpen = !!openSems[key];
-            const semLabel = `${sem.year} 學年 第 ${sem.semester} 學期`;
-            const passed = sem.courses.filter(c => c.score !== null && c.score >= 60).length;
+      </div>
 
+      {/* 學期手風琴 */}
+      {semesters.length === 0 ? (
+        <Card className="px-6 py-14 text-center text-sm text-slate-400">找不到相符的課程</Card>
+      ) : (
+        <div className="space-y-4">
+          {semesters.map((sem) => {
+            const open = isOpen(sem.key);
+            const credits = sem.courses.reduce((sum, c) => sum + (c.credit || 0), 0);
             return (
-              <div key={key} className="card" style={{ overflow: "hidden" }}>
-                {/* Semester header */}
+              <Card key={sem.key} className="overflow-hidden">
                 <button
-                  onClick={() => toggleSem(key)}
-                  style={{
-                    width: "100%", padding: "16px 20px",
-                    display: "flex", alignItems: "center", gap: "12px",
-                    background: isOpen ? "#fafafa" : "white",
-                    border: "none", cursor: "pointer", textAlign: "left",
-                  }}
+                  onClick={() => toggleSem(sem.key)}
+                  className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-slate-50/70"
                 >
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: "700", color: "#1e293b", fontSize: "15px" }}>
-                      {semLabel}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
-                    <span style={{
-                      padding: "3px 10px", borderRadius: "9999px",
-                      background: "#eef2ff", color: "#6366f1",
-                      fontSize: "12px", fontWeight: "600",
-                    }}>
-                      {sem.courses.length} 門
-                    </span>
-                    <span style={{
-                      padding: "3px 10px", borderRadius: "9999px",
-                      background: "#f0fdf4", color: "#16a34a",
-                      fontSize: "12px", fontWeight: "600",
-                    }}>
-                      {totalCredits(sem.courses)} 學分
-                    </span>
-                    <span style={{ color: "#94a3b8", fontSize: "12px", marginLeft: "4px" }}>
-                      {isOpen ? "▲" : "▼"}
-                    </span>
-                  </div>
+                  <span className="flex-1 text-sm font-bold text-slate-800">
+                    {sem.year} 學年 第 {sem.semester} 學期
+                  </span>
+                  <span className="tnum rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-600">
+                    {sem.courses.length} 門
+                  </span>
+                  <span className="tnum rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
+                    {credits.toFixed(1)} 學分
+                  </span>
+                  <ChevronDownIcon
+                    className={`size-4 text-slate-300 transition-transform ${open ? "rotate-180" : ""}`}
+                  />
                 </button>
 
-                {/* Course table */}
-                {isOpen && (
-                  <div style={{ borderTop: "1px solid #f1f5f9" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr className="table-header">
-                          <th style={{ minWidth: "200px" }}>課程名稱</th>
-                          <th style={{ textAlign: "center" }}>學分</th>
-                          <th style={{ textAlign: "center" }}>成績</th>
-                          <th style={{ textAlign: "center" }}>狀態</th>
+                {open && (
+                  <table className="w-full border-t border-slate-100">
+                    <thead>
+                      <tr className="bg-slate-50 text-left text-xs font-medium text-slate-500">
+                        <th className="px-5 py-2.5">課程名稱</th>
+                        <th className="px-4 py-2.5 text-center">學分</th>
+                        <th className="px-4 py-2.5 text-center">成績</th>
+                        <th className="px-5 py-2.5 text-center">狀態</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sem.courses.map((c, i) => (
+                        <tr key={i} className="border-t border-slate-50 text-sm hover:bg-slate-50/60">
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-2.5 font-medium text-slate-700">
+                              <CategoryBadge category={c.category} />
+                              {c.course_name}
+                            </div>
+                          </td>
+                          <td className="tnum px-4 py-3 text-center text-slate-500">{c.credit}</td>
+                          <td className="px-4 py-3 text-center">
+                            <ScoreText score={c.score} />
+                          </td>
+                          <td className="px-5 py-3 text-center">
+                            {c.course_status && c.course_status !== "有成績" ? (
+                              <span className="inline-block rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-600">
+                                {c.course_status}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-300">—</span>
+                            )}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {sem.courses.map((c, i) => {
-                          const st = STATUS_COLORS[c.course_status];
-                          return (
-                            <tr key={i} className="table-row">
-                              <td style={{ fontWeight: "500", color: "#1e293b" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                  {c.category && (() => {
-                                    const cat = CATEGORY_STYLES[c.category];
-                                    return cat ? (
-                                      <span style={{
-                                        display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                        width: "22px", height: "22px", borderRadius: "6px",
-                                        fontSize: "11px", fontWeight: "700", flexShrink: 0,
-                                        background: cat.bg, color: cat.color,
-                                      }}>{cat.label}</span>
-                                    ) : null;
-                                  })()}
-                                  {c.course_name}
-                                </div>
-                              </td>
-                              <td style={{ textAlign: "center", color: "#475569" }}>
-                                {c.credit}
-                              </td>
-                              <td style={{ textAlign: "center" }}>
-                                {c.score !== null ? (
-                                  <span className={c.score >= 60 ? "score-pass" : "score-fail"}>
-                                    {c.score}
-                                  </span>
-                                ) : (
-                                  <span style={{ color: "#94a3b8" }}>—</span>
-                                )}
-                              </td>
-                              <td style={{ textAlign: "center" }}>
-                                {c.course_status !== "有成績" && c.course_status ? (
-                                  <span style={{
-                                    display: "inline-block", padding: "3px 10px",
-                                    borderRadius: "9999px", fontSize: "12px", fontWeight: "600",
-                                    background: st?.bg || "#f1f5f9",
-                                    color: st?.color || "#64748b",
-                                  }}>
-                                    {st?.label || c.course_status}
-                                  </span>
-                                ) : (
-                                  <span style={{ color: "#94a3b8", fontSize: "13px" }}>—</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>

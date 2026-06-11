@@ -6,8 +6,8 @@ DEPT = "CS"
 YEAR = "112"
 
 
-def Required(student_id: str):
-    courses = fetch_course_records(student_id)
+def Required(student_id: str, assume_ungraded_passed: bool = False):
+    courses = fetch_course_records(student_id, assume_ungraded_passed=assume_ungraded_passed)
     required_entries = fetch_required_courses(DEPT, YEAR)
 
     code_to_record: dict[str, dict] = {}
@@ -37,8 +37,8 @@ def Required(student_id: str):
 
 
 
-def Group(student_id: str):
-    courses = fetch_course_records(student_id)
+def Group(student_id: str, assume_ungraded_passed: bool = False):
+    courses = fetch_course_records(student_id, assume_ungraded_passed=assume_ungraded_passed)
     group_data = fetch_group_names(YEAR)
     group_names = ["群A", "群B", "群C", "群D", "群E"]
     Group_list = [group_data.get(name, []) for name in group_names]

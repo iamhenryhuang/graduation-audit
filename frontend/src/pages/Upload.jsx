@@ -1,180 +1,140 @@
-import { useState, useContext } from "react";
-import { StudentContext } from "../context/StudentContext";
+import { useRef, useState } from "react";
+import { useStudent } from "../context/student";
+import { postJSON } from "../lib/api";
+import { Spinner } from "../components/ui";
+import { AlertIcon, CapIcon, CheckCircleIcon, DocumentUpIcon } from "../components/Icons";
 
-const API = "http://localhost:8000";
+function readFileAsJSON(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("檔案讀取失敗"));
+    reader.onload = (e) => {
+      try {
+        resolve(JSON.parse(e.target.result));
+      } catch {
+        reject(new Error("JSON 格式錯誤，請確認為全人系統匯出的檔案"));
+      }
+    };
+    reader.readAsText(file);
+  });
+}
 
 export default function Upload() {
-  const { setStudentId } = useContext(StudentContext);
+  const { setStudentId } = useStudent();
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
+  const dragDepth = useRef(0);
 
-  const handleFile = (file) => {
-    if (!file) return;
+  const handleFile = async (file) => {
+    if (!file || loading) return;
     setFileName(file.name);
     setError("");
     setPreview(null);
+    setLoading(true);
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      let json;
-      try {
-        json = JSON.parse(e.target.result);
-      } catch {
-        setError("JSON 格式錯誤，請確認為全人系統匯出的檔案");
-        return;
-      }
+    try {
+      const json = await readFileAsJSON(file);
+      setPreview(json?.[0]?.["課業學習"]?.aboutMe ?? null);
+      const { student_id } = await postJSON("/upload", { data: json });
+      setStudentId(student_id);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      const about = json?.[0]?.["課業學習"]?.aboutMe;
-      setPreview(about || null);
-
-      setLoading(true);
-      try {
-        const res = await fetch(`${API}/upload`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: json }),
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          setError(`上傳失敗：${err.detail}`);
-          return;
-        }
-        const { student_id } = await res.json();
-        setStudentId(student_id);
-      } catch {
-        setError("無法連線到後端，請確認後端伺服器已啟動");
-      } finally {
-        setLoading(false);
-      }
-    };
-    reader.readAsText(file);
+  const onDrop = (e) => {
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    handleFile(e.dataTransfer.files[0]);
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "#f5f5f4",
-      padding: "24px",
-    }}>
-      <div style={{ width: "100%", maxWidth: "480px" }}>
-        {/* Header */}
-        <div style={{ marginBottom: "32px" }}>
-          <h1 style={{ fontSize: "22px", fontWeight: "600", color: "#1c1917", marginBottom: "6px" }}>
-            畢業學分檢核
-          </h1>
-          <p style={{ color: "#78716c", fontSize: "14px" }}>
-            上傳全人系統匯出的 JSON 檔案以開始分析
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-slate-950 p-6">
+      {/* 背景裝飾 */}
+      <div className="pointer-events-none absolute -top-32 -left-32 size-[480px] rounded-full bg-indigo-600/30 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 -bottom-32 size-[480px] rounded-full bg-violet-600/20 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/3 left-1/2 size-72 -translate-x-1/2 rounded-full bg-sky-500/10 blur-3xl" />
+
+      <div className="relative w-full max-w-md animate-fade-up">
+        {/* 品牌 */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-xl shadow-indigo-500/30">
+            <CapIcon className="size-8" strokeWidth={1.6} />
+          </div>
+          <h1 className="text-2xl font-black text-white">畢業學分審核系統</h1>
+          <p className="mt-2 text-sm text-slate-400">
+            上傳全人系統匯出的選課紀錄 JSON，自動檢核畢業條件
           </p>
         </div>
 
-        {/* Upload card */}
-        <div className="card" style={{ padding: "28px" }}>
-          {/* Drop zone */}
-          <div
-            onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); }}
+        {/* 上傳卡片 */}
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl">
+          <label
+            onDrop={onDrop}
             onDragOver={(e) => e.preventDefault()}
-            onDragEnter={() => setDragging(true)}
-            onDragLeave={() => setDragging(false)}
-            style={{
-              border: `1px dashed ${dragging ? "#a8a29e" : "#d6d3d1"}`,
-              borderRadius: "6px",
-              padding: "40px 24px",
-              textAlign: "center",
-              background: dragging ? "#fafaf9" : "white",
-              transition: "all 0.15s",
+            onDragEnter={(e) => {
+              e.preventDefault();
+              dragDepth.current += 1;
+              setDragging(true);
             }}
+            onDragLeave={() => {
+              dragDepth.current -= 1;
+              if (dragDepth.current <= 0) setDragging(false);
+            }}
+            className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
+              dragging
+                ? "border-indigo-400 bg-indigo-500/10"
+                : "border-white/15 hover:border-white/30 hover:bg-white/5"
+            }`}
           >
-            <p style={{ fontWeight: "500", color: "#44403c", marginBottom: "4px" }}>
-              拖曳 JSON 到這裡
-            </p>
-            <p style={{ color: "#a8a29e", fontSize: "13px", marginBottom: "16px" }}>或</p>
-            <label style={{
-              display: "inline-block",
-              padding: "8px 20px",
-              borderRadius: "6px",
-              background: "#292524",
-              color: "white",
-              fontSize: "13px",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}>
-              選擇檔案
-              <input
-                type="file"
-                accept=".json"
-                hidden
-                onChange={(e) => handleFile(e.target.files[0])}
-              />
-            </label>
-          </div>
-
-          {/* File selected */}
-          {fileName && !error && (
-            <div style={{
-              marginTop: "14px",
-              padding: "10px 14px",
-              borderRadius: "6px",
-              background: "#fafaf9",
-              border: "1px solid #e7e5e4",
-              fontSize: "13px",
-              color: "#57534e",
-            }}>
-              {fileName}
+            <DocumentUpIcon
+              className={`size-10 transition-colors ${dragging ? "text-indigo-300" : "text-slate-500"}`}
+              strokeWidth={1.3}
+            />
+            <div>
+              <p className="font-semibold text-slate-200">拖曳 JSON 檔案到這裡</p>
+              <p className="mt-1 text-xs text-slate-500">或點擊選擇檔案</p>
             </div>
-          )}
+            <input
+              type="file"
+              accept=".json,application/json"
+              hidden
+              disabled={loading}
+              onChange={(e) => {
+                handleFile(e.target.files[0]);
+                e.target.value = "";
+              }}
+            />
+          </label>
 
-          {/* Loading */}
+          {/* 狀態列 */}
           {loading && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginTop: "14px",
-              padding: "10px 14px",
-              borderRadius: "6px",
-              background: "#fafaf9",
-              fontSize: "13px",
-              color: "#78716c",
-            }}>
-              <div className="spinner" />
-              正在上傳並解析資料...
+            <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-white/5 px-4 py-3 text-sm text-slate-300">
+              <Spinner className="size-4 border-white/20 border-t-indigo-400" />
+              正在上傳並解析「{fileName}」...
             </div>
           )}
 
-          {/* Error */}
           {error && (
-            <div style={{
-              marginTop: "14px",
-              padding: "10px 14px",
-              borderRadius: "6px",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              color: "#dc2626",
-              fontSize: "13px",
-            }}>
+            <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300 ring-1 ring-rose-500/30 ring-inset">
+              <AlertIcon className="mt-0.5 size-4 shrink-0" />
               {error}
             </div>
           )}
 
-          {/* Preview */}
-          {preview && !loading && (
-            <div style={{
-              marginTop: "14px",
-              padding: "16px",
-              borderRadius: "6px",
-              background: "#fafaf9",
-              border: "1px solid #e7e5e4",
-            }}>
-              <p style={{ fontSize: "12px", color: "#78716c", marginBottom: "10px", fontWeight: "500" }}>
+          {preview && !loading && !error && (
+            <div className="mt-4 rounded-xl bg-white/5 p-4 ring-1 ring-white/10 ring-inset">
+              <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                <CheckCircleIcon className="size-4" />
                 讀取成功
               </p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              <dl className="grid grid-cols-2 gap-3">
                 {[
                   ["姓名", preview.chineseName],
                   ["學號", preview.studentNumber],
@@ -182,17 +142,17 @@ export default function Upload() {
                   ["年級", preview.departmentProgramGrade],
                 ].map(([label, val]) => (
                   <div key={label}>
-                    <p style={{ color: "#a8a29e", fontSize: "11px", marginBottom: "2px" }}>{label}</p>
-                    <p style={{ color: "#1c1917", fontSize: "13px", fontWeight: "500" }}>{val}</p>
+                    <dt className="text-[11px] text-slate-500">{label}</dt>
+                    <dd className="text-sm font-medium text-slate-200">{val ?? "—"}</dd>
                   </div>
                 ))}
-              </div>
+              </dl>
             </div>
           )}
         </div>
 
-        <p style={{ textAlign: "center", color: "#a8a29e", fontSize: "12px", marginTop: "16px" }}>
-          支援全人系統匯出的 JSON 格式
+        <p className="mt-6 text-center text-xs text-slate-600">
+          僅支援資科系 112 學年入學畢業規則 · 資料只儲存於本機後端
         </p>
       </div>
     </div>

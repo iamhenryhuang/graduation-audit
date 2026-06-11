@@ -1,170 +1,203 @@
-import { useEffect, useState } from "react";
-import CreditPieChart from "../components/CreditPieChart";
+import { Link } from "react-router-dom";
+import { useStudent } from "../context/student";
+import { useApi } from "../hooks/useApi";
+import ProgressRing from "../components/ProgressRing";
+import {
+  Card,
+  ErrorState,
+  Loading,
+  PassBadge,
+  ProgressBar,
+  ScoreText,
+  StatCard,
+} from "../components/ui";
+import { AlertIcon, CheckCircleIcon } from "../components/Icons";
 
-const API = "http://localhost:8000";
+const CATEGORY_BARS = [
+  { key: "必修", barClass: "bg-violet-500" },
+  { key: "群修", barClass: "bg-blue-500" },
+  { key: "通識", barClass: "bg-emerald-500" },
+  { key: "體育", barClass: "bg-amber-500" },
+  { key: "自由選修", barClass: "bg-pink-500" },
+];
 
-function StatCard({ title, value }) {
-  return (
-    <div className="card" style={{ padding: "18px 20px", flex: 1, minWidth: "140px" }}>
-      <p style={{ color: "#78716c", fontSize: "12px", marginBottom: "6px" }}>{title}</p>
-      <p style={{ fontSize: "24px", fontWeight: "600", color: "#1c1917" }}>{value}</p>
-    </div>
-  );
+function categoryProgress(audit) {
+  const gen = audit.general.summary;
+  const generalEarned =
+    (gen?.counted_total_credit ?? 0) + (gen?.english_credit ?? 0) + (gen?.chinese_credit ?? 0);
+
+  return {
+    必修: { earned: audit.required.credits, required: audit.required.required_credits },
+    群修: { earned: audit.group.used_credits, required: audit.group.required_credits },
+    通識: { earned: generalEarned, required: audit.general.required_credits },
+    體育: { earned: audit.physical.used_credits, required: audit.physical.required_credits },
+    自由選修: { earned: audit.elective.total_credits, required: audit.elective.required_credits },
+  };
 }
 
-export default function Dashboard({ studentId }) {
-  const [student, setStudent] = useState(null);
-  const [audit, setAudit] = useState(null);
-  const [gpa, setGpa] = useState(null);
-  const [loading, setLoading] = useState(true);
+function buildAlerts(audit) {
+  return [
+    !audit.required.is_passed && `專業必修尚缺 ${audit.required.missing.length} 門課程`,
+    !audit.group.is_passed && "專業群修尚未達標",
+    !audit.general.is_passed && "通識學分尚未達標",
+    !audit.physical.is_passed && `體育尚缺 ${audit.physical.shortage.toFixed(1)} 學分`,
+    !audit.elective.is_passed &&
+      `自由選修尚缺 ${(audit.elective.required_credits - audit.elective.total_credits).toFixed(1)} 學分`,
+  ].filter(Boolean);
+}
 
-  useEffect(() => {
-    Promise.all([
-      fetch(`${API}/student/${studentId}`).then((r) => r.json()),
-      fetch(`${API}/audit/${studentId}`).then((r) => r.json()),
-      fetch(`${API}/gpa/${studentId}`).then((r) => r.json()),
-    ])
-      .then(([s, a, g]) => { setStudent(s); setAudit(a); setGpa(g); })
-      .finally(() => setLoading(false));
-  }, [studentId]);
+export default function Dashboard() {
+  const { studentId } = useStudent();
+  const { data, loading, error, retry } = useApi([
+    `/student/${studentId}`,
+    `/audit/${studentId}`,
+    `/gpa/${studentId}`,
+  ]);
 
-  if (loading) return <div className="loading-screen"><div className="spinner" />載入中...</div>;
-  if (!student || !audit || !gpa) return <div className="loading-screen">載入失敗</div>;
+  if (loading) return <Loading />;
+  if (error || !data) return <ErrorState message={error} onRetry={retry} />;
 
+  const [student, audit, gpa] = data;
   const earned = audit.summary.total_earned;
   const required = audit.summary.total_required;
-  const remain = required - earned;
-  const progress = Math.min((earned / required) * 100, 100);
+  const remain = Math.max(required - earned, 0);
+  const percent = required > 0 ? Math.min((earned / required) * 100, 100) : 0;
   const graduated = audit.summary.is_graduated;
-
+  const alerts = buildAlerts(audit);
+  const categories = categoryProgress(audit);
   const latestSemester = gpa.semesters[gpa.semesters.length - 1];
-  const latestCourses = latestSemester?.courses?.slice(0, 5) || [];
-
-  const alerts = [
-    !audit.required.is_passed && `專業必修尚缺 ${audit.required.missing.length} 門`,
-    !audit.group.is_passed   && "群修學分未達標",
-    !audit.general.is_passed && "通識學分未達標",
-    !audit.physical.is_passed && `體育尚缺 ${audit.physical.shortage.toFixed(1)} 學分`,
-    !audit.elective.is_passed && `選修尚缺 ${(audit.elective.required_credits - audit.elective.total_credits).toFixed(1)} 學分`,
-  ].filter(Boolean);
+  const latestCourses = latestSemester?.courses?.slice(0, 6) ?? [];
 
   return (
-    <div style={{ maxWidth: "1100px" }}>
-      <div style={{ marginBottom: "28px" }}>
-        <h1 style={{ fontSize: "20px", marginBottom: "4px" }}>{student.chinese_name}</h1>
-        <p style={{ color: "#78716c", fontSize: "13px" }}>
-          {student.student_id} · {student.department} · {student.enrollment_year} 年入學
-        </p>
-      </div>
-
-      {/* 畢業狀態 */}
-      <div className="card" style={{
-        padding: "14px 18px",
-        marginBottom: "20px",
-        background: graduated ? "#f0fdf4" : "#fef2f2",
-        border: `1px solid ${graduated ? "#bbf7d0" : "#fecaca"}`,
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-      }}>
-        <span style={{ fontSize: "13px", fontWeight: "500", color: graduated ? "#15803d" : "#dc2626" }}>
-          {graduated ? "符合畢業資格" : "尚未符合畢業資格"}
-        </span>
-        {!graduated && alerts.length > 0 && (
-          <span style={{ color: "#a8a29e", fontSize: "13px" }}>
-            — 還有 {alerts.length} 項條件未達標
-          </span>
-        )}
-      </div>
-
-      {/* 上方：學分圖 + 統計 */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "16px", flexWrap: "wrap" }}>
-        <div className="card" style={{ padding: "20px 24px", flexShrink: 0 }}>
-          <p style={{ color: "#78716c", fontSize: "12px", marginBottom: "2px" }}>學分完成比例</p>
-          <p style={{ color: "#a8a29e", fontSize: "12px", marginBottom: "8px" }}>
-            {earned.toFixed(1)} / {required} 學分
+    <div className="space-y-5">
+      {/* 學生資訊 + 畢業狀態 */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">
+            {student.chinese_name}
+            <span className="tnum ml-2.5 text-sm font-medium text-slate-400">
+              {student.student_id}
+            </span>
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {student.department} · {student.enrollment_year} 年入學
           </p>
-          <CreditPieChart earned={earned} remain={remain} />
         </div>
+        <PassBadge passed={graduated} passText="符合畢業資格" failText="尚未符合畢業資格" />
+      </div>
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px", minWidth: "280px" }}>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <StatCard title="已修學分"  value={earned.toFixed(1)} />
-            <StatCard title="剩餘學分"  value={remain.toFixed(1)} />
-            <StatCard title="完成率"    value={`${progress.toFixed(1)}%`} />
-          </div>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <StatCard title="學校 GPA" value={gpa.overall_gpa.toFixed(2)} />
-            <StatCard title="4.0 GPA"  value={gpa.overall_std_gpa.toFixed(2)} />
+      {/* 進度環 + 統計卡 */}
+      <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+        <Card className="flex flex-col items-center justify-center px-6 py-7">
+          <ProgressRing
+            percent={percent}
+            className={graduated ? "text-emerald-500" : "text-indigo-500"}
+          >
+            <p className="tnum text-3xl font-black text-slate-900">{percent.toFixed(0)}%</p>
+            <p className="mt-0.5 text-xs text-slate-400">畢業進度</p>
+          </ProgressRing>
+          <p className="tnum mt-4 text-sm text-slate-500">
+            <span className="font-bold text-slate-800">{earned.toFixed(1)}</span>
+            <span className="mx-1 text-slate-300">/</span>
+            {required.toFixed(0)} 學分
+          </p>
+        </Card>
+
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <StatCard label="已修學分" value={earned.toFixed(1)} tone="brand" />
+            <StatCard
+              label="剩餘學分"
+              value={remain.toFixed(1)}
+              tone={remain <= 0 ? "success" : "default"}
+            />
+            <StatCard label="學校 GPA" value={gpa.overall_gpa.toFixed(2)} />
+            <StatCard label="4.0 GPA" value={gpa.overall_std_gpa.toFixed(2)} />
           </div>
 
-          {/* Progress bar */}
-          <div className="card" style={{ padding: "16px 20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-              <span style={{ fontSize: "13px", color: "#57534e" }}>畢業進度</span>
-              <span style={{ fontSize: "13px", fontWeight: "600", color: "#1c1917" }}>{progress.toFixed(1)}%</span>
+          {/* 各類別進度 */}
+          <Card className="flex-1 px-6 py-5">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-800">各類別學分進度</p>
+              <Link to="/audit" className="text-xs font-medium text-indigo-600 hover:text-indigo-500">
+                查看完整審核 →
+              </Link>
             </div>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${progress}%` }} />
+            <div className="space-y-3.5">
+              {CATEGORY_BARS.map(({ key, barClass }) => {
+                const { earned: e, required: r } = categories[key];
+                const done = e >= r;
+                return (
+                  <div key={key}>
+                    <div className="mb-1.5 flex items-baseline justify-between">
+                      <span className="text-[13px] font-medium text-slate-600">{key}</span>
+                      <span className={`tnum text-xs ${done ? "font-semibold text-emerald-600" : "text-slate-400"}`}>
+                        {e.toFixed(1)} / {r.toFixed(0)}
+                      </span>
+                    </div>
+                    <ProgressBar value={e} max={r} barClass={barClass} />
+                  </div>
+                );
+              })}
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-              <span style={{ fontSize: "11px", color: "#a8a29e" }}>已修 {earned.toFixed(1)} 學分</span>
-              <span style={{ fontSize: "11px", color: "#a8a29e" }}>尚缺 {remain.toFixed(1)} 學分</span>
-            </div>
-          </div>
+          </Card>
         </div>
       </div>
 
-      {/* 下方：最近修課 + 提醒 */}
-      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-        <div className="card" style={{ flex: 2, minWidth: "280px", overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid #f5f5f4" }}>
-            <p style={{ fontWeight: "500", fontSize: "14px", color: "#1c1917" }}>最近修課紀錄</p>
-            <p style={{ color: "#a8a29e", fontSize: "12px", marginTop: "2px" }}>{latestSemester?.label}</p>
+      {/* 最近修課 + 待補項目 */}
+      <div className="grid items-start gap-5 lg:grid-cols-[1.6fr_1fr]">
+        <Card className="overflow-hidden">
+          <div className="flex items-baseline justify-between border-b border-slate-100 px-6 py-4">
+            <p className="text-sm font-semibold text-slate-800">最近修課紀錄</p>
+            <p className="text-xs text-slate-400">{latestSemester?.label}</p>
           </div>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr className="table-header">
-                <th>課程名稱</th>
-                <th style={{ textAlign: "center" }}>學分</th>
-                <th style={{ textAlign: "center" }}>成績</th>
-              </tr>
-            </thead>
-            <tbody>
-              {latestCourses.map((c, i) => (
-                <tr key={i} className="table-row">
-                  <td>{c.course_name}</td>
-                  <td style={{ textAlign: "center", color: "#78716c" }}>{c.credit}</td>
-                  <td style={{ textAlign: "center" }}>
-                    <span className={c.score >= 60 ? "score-pass" : "score-fail"}>{c.score}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="card" style={{ flex: 1, minWidth: "220px", padding: "20px" }}>
-          <p style={{ fontWeight: "500", fontSize: "14px", color: "#1c1917", marginBottom: "14px" }}>畢業提醒</p>
-          {alerts.length === 0 ? (
-            <p style={{ color: "#16a34a", fontSize: "13px" }}>所有條件均已達標</p>
+          {latestCourses.length === 0 ? (
+            <p className="px-6 py-10 text-center text-sm text-slate-400">尚無修課紀錄</p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {alerts.map((item, i) => (
-                <div key={i} style={{
-                  padding: "10px 12px",
-                  borderRadius: "6px",
-                  background: "#fafaf9",
-                  border: "1px solid #e7e5e4",
-                  fontSize: "13px",
-                  color: "#44403c",
-                }}>
-                  {item}
-                </div>
-              ))}
-            </div>
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50 text-left text-xs font-medium text-slate-500">
+                  <th className="px-6 py-2.5">課程名稱</th>
+                  <th className="px-4 py-2.5 text-center">學分</th>
+                  <th className="px-6 py-2.5 text-center">成績</th>
+                </tr>
+              </thead>
+              <tbody>
+                {latestCourses.map((c, i) => (
+                  <tr key={i} className="border-t border-slate-50 text-sm hover:bg-slate-50/60">
+                    <td className="px-6 py-3 text-slate-700">{c.course_name}</td>
+                    <td className="tnum px-4 py-3 text-center text-slate-500">{c.credit}</td>
+                    <td className="px-6 py-3 text-center">
+                      <ScoreText score={c.score} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
-        </div>
+        </Card>
+
+        <Card className="px-6 py-5">
+          <p className="mb-4 text-sm font-semibold text-slate-800">待補項目</p>
+          {alerts.length === 0 ? (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              <CheckCircleIcon className="size-4.5 shrink-0" />
+              所有畢業條件均已達標
+            </div>
+          ) : (
+            <ul className="space-y-2.5">
+              {alerts.map((item, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2.5 rounded-xl bg-amber-50/80 px-4 py-3 text-[13px] text-amber-900 ring-1 ring-amber-100 ring-inset"
+                >
+                  <AlertIcon className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
     </div>
   );
